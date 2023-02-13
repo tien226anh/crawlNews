@@ -1,5 +1,5 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
+from bs4 import BeautifulSoup
+import urllib.request
 import json
 
 class Data:
@@ -11,39 +11,36 @@ class Data:
 # Initialize the JSON data object
 data = {"content": []}
 
-url = "https://dantri.com.vn/the-gioi/ong-kim-jong-un-yeu-cau-tang-toc-phat-trien-tiem-luc-quan-su-20230210132924777.htm"
-
-# Use Selenium to extract the data from the web page
-driver = webdriver.Chrome("../chromedriver.exe")
+url = 'https://dantri.com.vn/the-gioi/ong-kim-jong-un-yeu-cau-tang-toc-phat-trien-tiem-luc-quan-su-20230210132924777.htm'
 
 def crawlDantri(url):
-    
     if "dantri.com.vn" not in url:
         return "khong dung duoc"
     else:
         cut = url.split("/")
-        file_name = cut[-1].replace(".htm", '').replace("-", "_")
+        file_name = cut[-1].replace(".htm", "").replace("-","_")
         file_name = str(file_name) + ".json"
-        
-        driver.get(url)
-        
+
+        page = urllib.request.urlopen(url)
+        soup = BeautifulSoup(page, 'html.parser')
+
         # Get title
-        title = driver.find_element(By.XPATH, "/html/body/main/div[1]/div[2]/div[1]/article[1]/h1")
-        title = title.text
+        title = soup.select('h1.title-page')[0].text.strip()
+        print(title)
 
         # Get description
-        description = driver.find_element(By.XPATH, "/html/body/main/div[1]/div[2]/div[1]/article[1]/h2")
-        description = description.text
+        description = soup.select('h2.singular-sapo')[0].text.strip()
+        print(description)
 
         # Get content
+        content = soup.find('div', class_="singular-content")
+        p_tags = content.find_all("p")
+
         paras = []
-        count = len(driver.find_elements(By.XPATH,"/html/body/main/div[1]/div[2]/div[1]/article[1]/div[3]/p"))
-        for i in range(1,count):
-            base_xpath = "/html/body/main/div[1]/div[2]/div[1]/article[1]/div[3]/p[" + str(i) + "]"
-            para = driver.find_element(By.XPATH, base_xpath).text.replace('"', "'")
+        for p in p_tags:
+            para = p.text
             paras.append(para)
-            
-        driver.close()
+        print(paras)
 
         # Store the data in a Data object
         content = Data(title, description, paras)
